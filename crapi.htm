@@ -1,0 +1,218 @@
+<!--
+	Built to display on Raspberry PI 3.5 screen
+					480x320
+-->
+
+<html>
+<head>
+	<title>CRAPI Weather</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<script src="https://kit.fontawesome.com/9ac205e785.js" crossorigin="anonymous"></script>
+	<style>
+		body{
+			margin: 15px;
+			color: white;
+			background: black;
+			font-size: 14px;
+			font-weight: bold;
+		}
+		img{
+			height: 50px;
+			width: 50px;
+		}
+		#logo{
+			font-size: 20px; 
+			font-weight: bold;
+			font-family: Comic Sans MS, cursive, sans-serif; 
+			font-style: oblique; 
+			color: goldenrod;
+		}
+		#logo_row{
+			background: rgb(5, 5, 84); 
+			margin-bottom: 20px;
+		}
+		#todays_date{
+			float: right;	
+			font-size: 20px;
+			font-weight: bold;					
+		}		
+		#news_row{
+			margin-top: 10px;			
+		}
+		#art_hl{
+			font-size: 28px;
+		}
+		.center_div{
+			text-align: center;
+		}
+		.marquee {
+			line-height: 50px;
+			color: white;
+			white-space: nowrap;			
+		}
+		.marquee p {
+			display: inline-block;
+			padding-left: 100%;
+			animation: marquee 12s linear infinite;
+		}
+		@keyframes marquee {
+			0%   { transform: translate(0, 0); }
+			100% { transform: translate(-100%, 0); }
+		}
+	</style>
+</head>
+	<body>		
+		<div class="container-fluid">
+			
+			<!-- Current Time -->
+			<div id="logo_row" class="row">
+				<div id="logo" class="col-4">
+					CRAPI <i class="fas fa-cloud-sun-rain"></i>					
+				</div>
+				<div class="col-8">
+					<span id="todays_date"></span>
+				</div>
+			</div><!-- Current Time Row -->
+
+			<!-- Weather Section -->		
+			<div class="row">												
+				<div class="col-4 center_div">
+					<span id="span_0"></span>
+				</div>				
+				<div class="col-4 center_div">
+					<span id="span_1"></span>
+				</div>				
+				<div class="col-4 center_div">
+					<span id="span_2"></span>
+				</div>						
+			</div><!-- Weather Row -->
+			
+			<!-- News Section -->
+			<div id="news_row" class="row">
+				<div class="col-12 marquee">
+					<p id="art_hl"></p>
+				</div>
+			</div><!-- News Row -->
+			
+		</div><!-- Container -->
+	</body>	
+	
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script>		
+
+		function todaysDate(){
+			var dtime = new Date()
+			var months = ['January ','February','March','April','May','June','July','August','September','October','November','December'];	
+			var month = months[dtime.getMonth()]
+			var day = dtime.getDate()
+			var year = dtime.getFullYear()
+			var ordinal = null
+			if(day == 1 || day == 21 || day == 31){
+				ordinal = 'st'
+			}else if(day == 3 || day == 23){
+				ordinal = 'rd'
+			}else{
+				ordinal = 'th'
+			}
+			$('#todays_date').html(month + ' ' + day + ordinal + ' ' + year)
+		}
+
+		function timeConverter(timestamp){
+			var a = new Date(timestamp * 1000);
+			var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];					
+			var month = months[a.getMonth()];
+			var date = a.getDate();
+			var hours = ['1AM', '2AM', '3AM', '4AM', '5AM', '6AM', '7AM', '8AM', '9AM', '10AM', '11AM', '12PM',
+						 '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM', '10PM', '11PM', '12AM']
+			var hour = hours[a.getHours()];
+			var time = month + ' ' + date + ', ' + hour;
+			return time;
+		}
+		
+		function updateWeather(){
+			var json_url = 'https://api.openweathermap.org/data/2.5/forecast?zip=53156&units=imperial&appid=59cf1a9efcb7c17c4b6e4c95d6b68e60';
+			$.ajax({
+				type: 'GET',
+				url: json_url,
+				dataType: 'json',
+				success: function(data) {
+									
+					var span_counter = 0
+					while(span_counter < 3){
+						
+						var date_time = data.list[span_counter].dt;
+						date_time = timeConverter(date_time);
+						var weather_desc = data.list[span_counter].weather[0].description
+						var icon = "https://openweathermap.org/themes/openweathermap/assets/vendor/owm/img/widgets/" 
+							+ data.list[span_counter].weather[0].icon + ".png";
+						var temp = Math.round(data.list[span_counter].main['temp']);
+						var fl_temp = Math.round(data.list[span_counter].main['feels_like']);
+						var win_speed = Math.round(data.list[span_counter].wind['speed']);
+						var clouds = Math.round(data.list[span_counter].clouds['all']);
+						
+						var span_selector = '#span_' + span_counter
+						$(span_selector).html(
+							date_time 
+							+ '<br/>'
+							+ weather_desc
+							+ '<br/>'
+							+ '<img src="' + icon + '">' 
+							+ '<br/>' 
+							+ 'TEMP: ' + temp + '&#8457;'
+							+ '<br/>'
+							+ 'FEELS: ' + fl_temp + '&#8457;'
+							+ '<br/>'
+							+ 'WINDS: ' + win_speed + ' mph'
+							+ '<br/>'
+							+ 'CLOUDS: ' + clouds + '%'
+						)
+						
+						span_counter ++;
+					}
+					
+				}
+			});
+		}
+
+		var art_array = []
+		function getNewsAPI(){			
+			var json_url = 'https://newsapi.org/v2/top-headlines?country=us&apiKey=e510f28cada845bc965815537d39d792';
+			$.ajax({
+				type: 'GET',
+				url: json_url,
+				dataType: 'json',
+				success: function(data){
+					art_array = []
+					for(art_num=0; art_num<data.articles.length	; art_num++){
+						art_array.push(data.articles[art_num].title)						
+					}					
+				}
+			});			
+		};		
+				
+		var art_next = 0
+		function nextArticle(){			
+			$("#art_hl").html(art_array[art_next])
+			console.log(art_next)
+			if(art_next != art_array.length){
+				art_next = art_next + 1;
+			}else{
+				art_next = 0;
+			}
+		}
+		
+		todaysDate();
+		setInterval(todaysDate, 120000)
+		updateWeather();
+		setInterval(updateWeather, 120000);
+		getNewsAPI();
+		setInterval(getNewsAPI, 120000);
+		nextArticle();
+		setInterval(nextArticle, 30000);
+	</script>
+</html>
